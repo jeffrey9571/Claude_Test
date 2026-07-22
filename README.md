@@ -84,6 +84,32 @@ mvn spring-boot:run   # PostgreSQL 접속정보는 application.yml 또는 환경
 테스트는 `src/test/resources/application.yml`의 H2(PostgreSQL 호환 모드)로 Flyway
 마이그레이션을 그대로 적용해 실행됩니다.
 
+## 로컬에서 화면 바로 보기 (PostgreSQL 설치 불필요)
+
+> 이 방법은 `local_demo` 브랜치에 포함된 `local` 프로파일(H2 인메모리)을 사용한다.
+> `master` 브랜치에는 없으므로, 화면을 빠르게 확인하려면 `local_demo` 브랜치를 사용한다.
+
+필요한 것은 **JDK 8+** 와 **Maven** 뿐이다. DB를 따로 설치하지 않아도 H2 인메모리 DB에
+Flyway가 테이블과 파일럿 5종 시드 데이터를 자동 생성한다.
+
+```bash
+git clone -b local_demo https://github.com/jeffrey9571/Claude_Test.git
+cd Claude_Test
+mvn clean package -DskipTests
+java -jar target/ifrs17-business-service-layer.jar --spring.profiles.active=local
+```
+
+기동 후 브라우저에서:
+
+- **관리 콘솔**: <http://localhost:8080/console/index.html>
+  - CON-01 서비스 명세 관리(목록·상세·수정), CON-02 서비스 Test(Request 입력→실행→응답 확인)
+  - 화면 상단 인증 Header 입력칸은 기본값이 채워져 있어 그대로 **실행**만 누르면 된다.
+- **H2 콘솔(선택)**: <http://localhost:8080/h2-console>
+  - JDBC URL `jdbc:h2:mem:ifrs17_bsl`, 사용자 `sa`, 비밀번호 공란
+
+H2는 인메모리이므로 애플리케이션을 종료하면 데이터가 초기화된다(데모 목적). 운영은
+`master` 브랜치의 기본 프로파일(PostgreSQL)을 사용한다.
+
 ## 데이터베이스 (7장)
 
 `business_service` Schema, `BS_` 접두 테이블 13종. `src/main/resources/db/migration/`
