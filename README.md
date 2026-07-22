@@ -151,3 +151,50 @@ Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
     쪽 작업이다.
 
   (TODO: 구체적인 JS 통신 모듈 설계/구현 방식은 추후 보강)
+
+## MCP 연계 (Model Context Protocol)
+
+> MCP Server 본체 개발은 본 저장소 범위에 포함되지 않는다(설계서 1.4 제외 범위).
+> 아래는 향후 MCP 연동을 이해하기 위한 개념 정리이며, 본 저장소는 MCP가 연동할 수 있는
+> 표준 REST 계약과 Tool 매핑 기준을 제공하는 데까지가 범위이다(설계서 1.3 "인터페이스만").
+
+### 개념
+
+MCP는 AI 에이전트(Claude·GPT·Gemini 등)가 사내 시스템의 기능·데이터에 안전하게 접근하도록
+연결하는 **개방형 표준 프로토콜**이다. 특정 AI 벤더 전용이 아니며, 새로운 URL 스킴(`mcp://`)이
+아니라 기존 전송(로컬 stdio 또는 원격 `https://`) 위에서 오가는 **메시지 규격(JSON-RPC)**이다.
+
+### 이 프로젝트에서의 위치
+
+본 Business Service Layer는 MCP Server가 호출하는 **대상 REST API**다.
+
+```
+[AI 모델]  ──MCP(JSON-RPC)──▶  [MCP Server]  ──일반 REST──▶  [Business Service Layer]  ──▶  DB
+ 판단·추론                        중개(AI 없음)                  업무 실행(본 저장소)
+```
+
+### 핵심 원칙
+
+- **2-hop 호출**: ① AI ↔ MCP Server(MCP 규격) ② MCP Server ↔ 본 서버(일반 REST).
+  본 서버는 MCP를 알 필요 없이 REST 요청만 받는다.
+- **AI는 MCP Server 안에 없다**: MCP Server는 각 시스템 API를 감싼 함수(Tool)를 노출하는
+  얇은 중개 계층일 뿐이며, "어떤 Tool을 쓸지 판단"은 AI가 한다(설계서 3.2 책임 분리).
+- **채널 독립**: 어떤 AI/채널이 붙어도 REST 계약은 그대로 재사용한다(설계서 2·3.2).
+- **공용 vs 분리**: MCP Server는 여러 시스템의 공용 창구로 둘 수 있으나, Business Service
+  Layer는 시스템별로 분리한다(DB·권한·장애 격리, 설계서 3.1).
+- **보안**: MCP/AI는 DB 계정을 갖지 않고 권한 최종 판단도 하지 않는다. Client 허용목록
+  (`BS_CLIENT`, 예: `MCP-IFRS17-01`)과 서비스별 역할로 통제한다(설계서 6.2).
+
+### 구현 언어
+
+MCP Server는 파이썬·Java·TypeScript 등 어떤 언어로도 구현 가능하다(AI는 소스코드가 아니라
+Tool 이름·설명·파라미터만 참조). 본 프로젝트가 Java(Spring)이므로 Spring AI MCP Server로
+동일 스택 관리도 가능하다.
+
+### 서비스 확장 시 (Tool 등록 방식)
+
+- **방식 A (수동)**: 서비스가 늘면 MCP Server에 Tool(메서드)을 세트로 추가한다.
+  Tool 설명을 정교하게 다듬을 수 있으나, 서비스 추가 시 MCP Server 수정·재배포가 필요하다.
+- **방식 B (자동)**: MCP Server가 Catalog API(`GET /catalog`)와 파라미터 명세
+  (`BS_SERVICE_PARAM`)를 읽어 Tool을 자동 생성한다. 서비스 추가 시 MCP 코드 수정이
+  불필요하며, 본 저장소의 Catalog/Parameter 구조가 이 방식을 지원한다.
