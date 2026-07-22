@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ifrs17-business-service-layer
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ifrs17
+    username: ifrs17_app
+    password: change-me
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: business_service
+        jdbc:
+          time_zone: Asia/Seoul
+  flyway:
+    enabled: true
+    schemas: business_service
+    default-schema: business_service
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+business-service:
+  default-timeout-ms: 30000
+  max-response-bytes: 5242880
+  audit:
+    fail-closed: false
+  security:
+    # 착수 전 확인 체크리스트 #2, #6: 실제 SSO Token/Client 인증 연동 방식 확정 전까지
+    # 아래 Header 기반 임시 인증을 사용한다. 운영 반영 전 SSO 연동 모듈로 교체 필요.
+    trusted-header-auth: true
+
+logging:
+  level:
+    com.koreanre.ifrs17.businessservice: INFO
