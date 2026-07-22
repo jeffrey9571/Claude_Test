@@ -101,7 +101,7 @@ mvn spring-boot:run   # PostgreSQL 접속정보는 application.yml 또는 환경
 공통 Framework + 단순화된 Console)까지이며, Action 서비스·복잡한 Lifecycle/승인
 Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
 
-### 추가검토사항
+## 추가검토사항
 
 - **서비스는 "최신 버전" 기준으로만 조회/관리됨**
 
