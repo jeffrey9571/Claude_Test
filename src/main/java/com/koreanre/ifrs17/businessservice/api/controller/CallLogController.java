@@ -5,6 +5,7 @@ import com.koreanre.ifrs17.businessservice.core.exception.ErrorCode;
 import com.koreanre.ifrs17.businessservice.core.exception.BusinessServiceException;
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsCallLogRepository;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsCallLog;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 5.1 URI 규칙: GET /calls/{requestId}.
  * 12.3 장애 대응 순서 1~2단계(Request ID로 호출 식별, Call Log 확인)를 지원한다.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/business-services/v1/calls")
 public class CallLogController {
@@ -26,24 +28,25 @@ public class CallLogController {
 
     @GetMapping("/{requestId}")
     public CallLogEntry get(@PathVariable String requestId) {
-        BsCallLog log = callLogRepository.findById(requestId)
+        log.info(">>> [진입] CallLogController.get() - 호출이력 추적. requestId={}", requestId);
+        BsCallLog callLog = callLogRepository.findById(requestId)
                 .orElseThrow(() -> new BusinessServiceException(ErrorCode.BS_SVC_404,
                         "호출 이력을 찾을 수 없습니다: " + requestId));
         return CallLogEntry.builder()
-                .requestId(log.getRequestId())
-                .traceId(log.getTraceId())
-                .serviceId(log.getServiceId())
-                .serviceVersion(log.getServiceVersion())
-                .clientId(log.getClientId())
-                .userId(log.getUserId())
-                .requestedAt(log.getRequestedAt())
-                .completedAt(log.getCompletedAt())
-                .elapsedMs(log.getElapsedMs())
-                .statusCode(log.getStatusCode())
-                .httpStatus(log.getHttpStatus())
-                .errorCode(log.getErrorCode())
-                .errorId(log.getErrorId())
-                .resultCount(log.getResultCount())
+                .requestId(callLog.getRequestId())
+                .traceId(callLog.getTraceId())
+                .serviceId(callLog.getServiceId())
+                .serviceVersion(callLog.getServiceVersion())
+                .clientId(callLog.getClientId())
+                .userId(callLog.getUserId())
+                .requestedAt(callLog.getRequestedAt())
+                .completedAt(callLog.getCompletedAt())
+                .elapsedMs(callLog.getElapsedMs())
+                .statusCode(callLog.getStatusCode())
+                .httpStatus(callLog.getHttpStatus())
+                .errorCode(callLog.getErrorCode())
+                .errorId(callLog.getErrorId())
+                .resultCount(callLog.getResultCount())
                 .build();
     }
 }

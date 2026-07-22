@@ -41,6 +41,7 @@ public class AuditLogger {
     }
 
     public void start(ServiceContext context, String serviceVersion, Map<String, Object> parameters) {
+        log.info(">>> [진입] AuditLogger.start() - 감사 시작 로그 저장. requestId={}", context.getRequestId());
         BsCallLog entry = BsCallLog.builder()
                 .requestId(context.getRequestId())
                 .traceId(context.getTraceId())
@@ -63,6 +64,8 @@ public class AuditLogger {
     }
 
     public void success(ServiceContext context, String serviceVersion, int httpStatus, Integer resultCount, long elapsedMs) {
+        log.info(">>> [진입] AuditLogger.success() - 감사 성공 로그 갱신. requestId={}, resultCount={}",
+                context.getRequestId(), resultCount);
         Optional<BsCallLog> existing = repository.findById(context.getRequestId());
         BsCallLog entry = existing.orElseGet(() -> newFallbackEntry(context, serviceVersion));
         entry.setCompletedAt(LocalDateTime.now());
@@ -76,6 +79,8 @@ public class AuditLogger {
 
     public void fail(ServiceContext context, String serviceVersion, int httpStatus, String errorCode, String errorId,
             long elapsedMs) {
+        log.info(">>> [진입] AuditLogger.fail() - 감사 실패 로그 갱신. requestId={}, errorCode={}",
+                context.getRequestId(), errorCode);
         Optional<BsCallLog> existing = repository.findById(context.getRequestId());
         BsCallLog entry = existing.orElseGet(() -> newFallbackEntry(context, serviceVersion));
         entry.setCompletedAt(LocalDateTime.now());

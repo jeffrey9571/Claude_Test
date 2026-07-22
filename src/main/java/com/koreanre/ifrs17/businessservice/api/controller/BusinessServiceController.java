@@ -3,6 +3,7 @@ package com.koreanre.ifrs17.businessservice.api.controller;
 import com.koreanre.ifrs17.businessservice.api.dto.request.StandardRequest;
 import com.koreanre.ifrs17.businessservice.api.dto.response.StandardResponse;
 import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceExecutor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
  * 10.1 Reference Implementation Controller.
  * Console의 서비스 Test 화면(8.6)도 동일한 Endpoint/Controller/Dispatcher 경로를 사용한다.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/business-services/v1")
 public class BusinessServiceController {
@@ -32,6 +34,8 @@ public class BusinessServiceController {
             @PathVariable String serviceId,
             @RequestBody StandardRequest request,
             HttpServletRequest httpRequest) {
+        log.info(">>> [진입] BusinessServiceController.execute() - serviceId={}, serviceVersion={}",
+                serviceId, request == null ? null : request.getServiceVersion());
         return executor.execute(serviceId, request, httpRequest);
     }
 }

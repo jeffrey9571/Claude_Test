@@ -1,5 +1,6 @@
 package com.koreanre.ifrs17.businessservice.legacy.existing;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /** 개발/테스트용 Stub. 운영 반영 전 DB-INC의 현행 Service 구현으로 교체(Bean 대체)한다. */
+@Slf4j
 @Component
 public class ExistingCsmServiceStub implements ExistingCsmService {
 
@@ -19,6 +21,8 @@ public class ExistingCsmServiceStub implements ExistingCsmService {
 
     @Override
     public LegacyCsmStatus findCsmStatus(String closingYearMonth, String portfolioCode) {
+        log.info(">>> [진입] ExistingCsmServiceStub.findCsmStatus() - (Stub) 현행 CSM 데이터 생성. yearMonth={}",
+                closingYearMonth);
         YearMonth requested;
         try {
             requested = YearMonth.parse(closingYearMonth);

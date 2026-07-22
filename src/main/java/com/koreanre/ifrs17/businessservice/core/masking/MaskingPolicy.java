@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -19,6 +20,7 @@ import java.util.Map;
  * <p>필드명 키워드 기반의 범용 마스킹으로, 응답 DTO를 직렬화한 JSON 트리를
  * 재귀적으로 순회하며 민감 필드로 판단되는 문자열 값을 마스킹한다.</p>
  */
+@Slf4j
 @Component
 public class MaskingPolicy {
 
@@ -37,6 +39,7 @@ public class MaskingPolicy {
 
     @SuppressWarnings("unchecked")
     public <T> T mask(T result, String policy) {
+        log.info(">>> [진입] MaskingPolicy.mask() - 민감정보 마스킹 정책 적용. policy={}", policy);
         if (result == null || NO_MASKING.equals(policy)) {
             return result;
         }

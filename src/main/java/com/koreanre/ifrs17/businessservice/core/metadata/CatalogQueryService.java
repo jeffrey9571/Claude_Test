@@ -6,6 +6,7 @@ import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceRoleRepos
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceVersionRepository;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsService;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceVersion;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /** 5.1 GET /catalog, /catalog/{serviceId}: 외부 채널에 공개하는 서비스 목록. */
+@Slf4j
 @Component
 public class CatalogQueryService {
 
@@ -29,6 +31,7 @@ public class CatalogQueryService {
     }
 
     public List<CatalogEntry> listActive() {
+        log.info(">>> [진입] CatalogQueryService.listActive() - 활성 서비스 Catalog 구성");
         return serviceRepository.findAll().stream()
                 .filter(BsService::isActive)
                 .map(this::toEntry)

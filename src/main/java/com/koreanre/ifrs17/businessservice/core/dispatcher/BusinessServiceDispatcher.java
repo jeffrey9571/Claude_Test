@@ -6,6 +6,7 @@ import com.koreanre.ifrs17.businessservice.core.exception.SystemException;
 import com.koreanre.ifrs17.businessservice.core.exception.ValidationException;
 import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceHandler;
 import com.koreanre.ifrs17.businessservice.core.metadata.ServiceMetadata;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ import java.util.Map;
  * Console에서 등록한 implementation_bean 이름으로 Spring Bean을 조회하고,
  * BusinessServiceHandler 계약(validate/authorize/process)에 따라 실행한다.
  */
+@Slf4j
 @Component
 public class BusinessServiceDispatcher {
 
@@ -30,6 +32,8 @@ public class BusinessServiceDispatcher {
 
     @SuppressWarnings("unchecked")
     public Object dispatch(ServiceContext context, ServiceMetadata metadata, Map<String, Object> parameters) {
+        log.info(">>> [진입] BusinessServiceDispatcher.dispatch() - serviceId={}, 구현 Bean={}",
+                metadata.getServiceId(), metadata.getImplementationBean());
         BusinessServiceHandler<Object, Object> handler = resolveHandler(metadata);
 
         if (!metadata.getServiceId().equals(handler.serviceId())) {
@@ -39,8 +43,11 @@ public class BusinessServiceDispatcher {
         }
 
         Object request = convertRequest(parameters, handler.requestType());
+        log.info("    [Handler] validate() 호출");
         handler.validate(context, request);
+        log.info("    [Handler] authorize() 호출");
         handler.authorize(context, request);
+        log.info("    [Handler] process() 호출");
         return handler.process(context, request);
     }
 

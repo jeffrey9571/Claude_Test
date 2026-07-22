@@ -72,40 +72,50 @@ public class BusinessServiceExecutor {
         long start = System.currentTimeMillis();
         ServiceContext context = null;
         String serviceVersion = request == null ? null : request.getServiceVersion();
+        log.info(">>> [진입] BusinessServiceExecutor.execute() - 표준 처리 순서 시작. serviceId={}", serviceId);
         try {
             // 1~2. HTTP Header/Body 수신, Request ID 생성/검증, SSO Context 추출
+            log.info("    [1단계] Context 생성(SSO/Client/RequestID)");
             context = contextResolver.resolve(httpRequest, serviceId);
 
             // 3. 호출 Client 검증
+            log.info("    [2단계] 호출 Client 검증 - clientId={}", context.getClientId());
             clientValidator.validate(context.getClientId(), serviceId);
 
             // 5. Service Catalog에서 활성 버전 조회
+            log.info("    [3단계] Catalog에서 활성 서비스/버전 조회");
             String requestedVersion = serviceVersion;
             ServiceMetadata metadata = metadataRepository.findActive(serviceId, requestedVersion)
                     .orElseThrow(() -> new ServiceNotFoundException(serviceId, String.valueOf(requestedVersion)));
             serviceVersion = metadata.getVersion();
 
             // 6. 서비스/역할 권한 확인
+            log.info("    [4단계] 서비스/역할 권한 확인 - userRoles={}", context.getRoles());
             authorizationService.authorize(context, metadata);
 
             // 8. 감사 시작 로그 기록
             Map<String, Object> parameters = request.getParameters() == null
                     ? Collections.emptyMap() : request.getParameters();
+            log.info("    [5단계] 감사 시작 로그 기록");
             auditLogger.start(context, serviceVersion, parameters);
 
             // 7,9,10. 입력검증 + Handler 실행(Legacy Adapter 호출 포함), Timeout 보호
+            log.info("    [6단계] Handler 실행(Dispatcher 경유)");
             Object result = invokeWithTimeout(context, metadata, parameters);
 
             // 11. 결과 마스킹
+            log.info("    [7단계] 결과 마스킹");
             Object maskedResult = maskingPolicy.mask(result, MaskingPolicy.DEFAULT_MASKING);
 
             long elapsedMs = System.currentTimeMillis() - start;
             int resultCount = maskedResult == null ? 0 : 1;
 
             // 12. 감사 성공 로그
+            log.info("    [8단계] 감사 성공 로그 기록 - elapsedMs={}", elapsedMs);
             auditLogger.success(context, serviceVersion, HttpStatus.OK.value(), resultCount, elapsedMs);
 
             // 13. 표준 Response 반환
+            log.info("<<< [완료] BusinessServiceExecutor.execute() - SUCCESS. requestId={}", context.getRequestId());
             StandardResponse<Object> response = responseBuilder.success(context, serviceVersion, maskedResult, elapsedMs);
             return ResponseEntity.ok(response);
 

@@ -7,6 +7,7 @@ import com.koreanre.ifrs17.businessservice.console.ServiceSpecSummary;
 import com.koreanre.ifrs17.businessservice.core.context.RequestContextResolver;
 import com.koreanre.ifrs17.businessservice.core.exception.AuthenticationException;
 import com.koreanre.ifrs17.businessservice.core.exception.AuthorizationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,6 +28,7 @@ import java.util.Map;
  * 6.2: 관리 Console의 등록·변경·권한부여는 운영자 역할(BS_CONSOLE_ADMIN)로 제한한다.
  */
 @RestController
+@Slf4j
 @RequestMapping("/api/console/services")
 public class ServiceSpecController {
 
@@ -40,16 +42,20 @@ public class ServiceSpecController {
 
     @GetMapping
     public List<ServiceSpecSummary> list() {
+        log.info(">>> [진입] ServiceSpecController.list() - [CON-01] 서비스 명세 목록 조회");
         return serviceSpecService.list();
     }
 
     @GetMapping("/{serviceId}")
     public ServiceSpecDetail get(@PathVariable String serviceId) {
+        log.info(">>> [진입] ServiceSpecController.get() - [CON-01] 서비스 상세 조회. serviceId={}", serviceId);
         return serviceSpecService.get(serviceId);
     }
 
     @PostMapping
     public ServiceSpecDetail create(@RequestBody ServiceSpecRequest request, HttpServletRequest httpRequest) {
+        log.info(">>> [진입] ServiceSpecController.create() - [CON-01] 서비스 신규 등록. serviceId={}",
+                request == null ? null : request.getServiceId());
         String operatorId = requireOperator(httpRequest);
         return serviceSpecService.create(request, operatorId);
     }
@@ -57,6 +63,7 @@ public class ServiceSpecController {
     @PutMapping("/{serviceId}")
     public ServiceSpecDetail update(@PathVariable String serviceId, @RequestBody ServiceSpecRequest request,
             HttpServletRequest httpRequest) {
+        log.info(">>> [진입] ServiceSpecController.update() - [CON-01] 서비스 명세 수정. serviceId={}", serviceId);
         String operatorId = requireOperator(httpRequest);
         return serviceSpecService.update(serviceId, request, operatorId);
     }
@@ -64,8 +71,10 @@ public class ServiceSpecController {
     @PatchMapping("/{serviceId}/active")
     public ServiceSpecDetail setActive(@PathVariable String serviceId, @RequestBody Map<String, Boolean> body,
             HttpServletRequest httpRequest) {
-        String operatorId = requireOperator(httpRequest);
         boolean active = Boolean.TRUE.equals(body.get("active"));
+        log.info(">>> [진입] ServiceSpecController.setActive() - [CON-01] 사용여부 전환. serviceId={}, active={}",
+                serviceId, active);
+        String operatorId = requireOperator(httpRequest);
         return serviceSpecService.setActive(serviceId, active, operatorId);
     }
 

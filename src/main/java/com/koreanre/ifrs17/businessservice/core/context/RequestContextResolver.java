@@ -1,6 +1,7 @@
 package com.koreanre.ifrs17.businessservice.core.context;
 
 import com.koreanre.ifrs17.businessservice.core.exception.AuthenticationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
  * X-Department-Code)를 사용자 Context 소스로 사용한다. 운영 반영 전 실제 SSO
  * Token 파싱 모듈로 교체해야 한다.</p>
  */
+@Slf4j
 @Component
 public class RequestContextResolver {
 
@@ -37,6 +39,7 @@ public class RequestContextResolver {
     private final AtomicLong sequence = new AtomicLong(0);
 
     public ServiceContext resolve(HttpServletRequest httpRequest, String serviceId) {
+        log.info(">>> [진입] RequestContextResolver.resolve() - Header에서 SSO/Client Context 생성");
         String authorization = httpRequest.getHeader(HEADER_AUTHORIZATION);
         if (!StringUtils.hasText(authorization)) {
             throw new AuthenticationException("Authorization Header가 없습니다.");

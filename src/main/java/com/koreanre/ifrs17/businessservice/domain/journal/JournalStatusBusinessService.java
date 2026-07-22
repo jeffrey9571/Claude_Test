@@ -5,9 +5,11 @@ import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceHandler;
 import com.koreanre.ifrs17.businessservice.core.validator.ValidationUtils;
 import com.koreanre.ifrs17.businessservice.legacy.adapter.JournalStatusLegacyAdapter;
 import com.koreanre.ifrs17.businessservice.legacy.existing.LegacyJournalStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /** 9.2 IFRS17.JOURNAL.STATUS: 전표 생성·반영 상태 조회. */
+@Slf4j
 @Component("journalStatusBusinessService")
 public class JournalStatusBusinessService
         implements BusinessServiceHandler<JournalStatusRequest, JournalStatusResponse> {
@@ -40,6 +42,8 @@ public class JournalStatusBusinessService
 
     @Override
     public JournalStatusResponse process(ServiceContext context, JournalStatusRequest request) {
+        log.info(">>> [진입] JournalStatusBusinessService.process() - 전표 상태 조회. closingYearMonth={}",
+                request.getClosingYearMonth());
         LegacyJournalStatus legacy = adapter.findStatus(request.getClosingYearMonth(), request.getJournalType());
         return JournalStatusMapper.toResponse(request.getClosingYearMonth(), request.getJournalType(), legacy);
     }

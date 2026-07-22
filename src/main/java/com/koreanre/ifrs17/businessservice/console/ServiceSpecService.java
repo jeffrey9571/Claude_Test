@@ -12,6 +12,7 @@ import com.koreanre.ifrs17.businessservice.persistence.model.BsService;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceParam;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceRole;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceVersion;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
  * 저장/사용전환 시 Spring Bean 존재 여부, BusinessServiceHandler 구현 여부,
  * Service ID 일치 여부를 검증한다(8.1, CON-ACC-01).
  */
+@Slf4j
 @Service
 public class ServiceSpecService {
 
@@ -55,12 +57,14 @@ public class ServiceSpecService {
     }
 
     public List<ServiceSpecSummary> list() {
+        log.info(">>> [진입] ServiceSpecService.list() - 전체 서비스 목록 조회");
         return serviceRepository.findAll().stream()
                 .map(this::toSummary)
                 .collect(Collectors.toList());
     }
 
     public ServiceSpecDetail get(String serviceId) {
+        log.info(">>> [진입] ServiceSpecService.get() - serviceId={}", serviceId);
         BsService service = requireService(serviceId);
         BsServiceVersion version = requireLatestVersion(serviceId);
         return toDetail(service, version);
@@ -68,6 +72,7 @@ public class ServiceSpecService {
 
     @Transactional
     public ServiceSpecDetail create(ServiceSpecRequest request, String operatorId) {
+        log.info(">>> [진입] ServiceSpecService.create() - serviceId={}, operator={}", request.getServiceId(), operatorId);
         validateServiceIdFormat(request.getServiceId());
         if (serviceRepository.existsById(request.getServiceId())) {
             throw new ValidationException("이미 등록된 Service ID입니다: " + request.getServiceId());
@@ -102,6 +107,7 @@ public class ServiceSpecService {
 
     @Transactional
     public ServiceSpecDetail update(String serviceId, ServiceSpecRequest request, String operatorId) {
+        log.info(">>> [진입] ServiceSpecService.update() - serviceId={}, operator={}", serviceId, operatorId);
         BsService service = requireService(serviceId);
         validateCommon(request);
         validateBean(serviceId, request.getImplementationBean());
@@ -138,6 +144,7 @@ public class ServiceSpecService {
 
     @Transactional
     public ServiceSpecDetail setActive(String serviceId, boolean active, String operatorId) {
+        log.info(">>> [진입] ServiceSpecService.setActive() - serviceId={}, active={}", serviceId, active);
         BsService service = requireService(serviceId);
         BsServiceVersion version = requireLatestVersion(serviceId);
 
@@ -161,6 +168,7 @@ public class ServiceSpecService {
 
     /** CON-ACC-01: Bean 미등록/Interface 미구현/ServiceId 불일치 시 저장·사용전환을 차단한다. */
     private void validateBean(String serviceId, String implementationBean) {
+        log.info("    [검증] Spring Bean 존재/Interface 구현/ServiceId 일치 확인 - bean={}", implementationBean);
         Object bean;
         try {
             bean = applicationContext.getBean(implementationBean);

@@ -5,9 +5,11 @@ import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceHandler;
 import com.koreanre.ifrs17.businessservice.core.validator.ValidationUtils;
 import com.koreanre.ifrs17.businessservice.legacy.adapter.CsmStatusLegacyAdapter;
 import com.koreanre.ifrs17.businessservice.legacy.existing.LegacyCsmStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /** 9.5 IFRS17.CSM.STATUS: CSM 산출 상태 조회. */
+@Slf4j
 @Component("csmStatusBusinessService")
 public class CsmStatusBusinessService
         implements BusinessServiceHandler<CsmStatusRequest, CsmStatusResponse> {
@@ -40,6 +42,8 @@ public class CsmStatusBusinessService
 
     @Override
     public CsmStatusResponse process(ServiceContext context, CsmStatusRequest request) {
+        log.info(">>> [진입] CsmStatusBusinessService.process() - CSM 산출상태 조회. closingYearMonth={}",
+                request.getClosingYearMonth());
         LegacyCsmStatus legacy = adapter.findStatus(request.getClosingYearMonth(), request.getPortfolioCode());
         return CsmStatusMapper.toResponse(request.getClosingYearMonth(), request.getPortfolioCode(), legacy);
     }

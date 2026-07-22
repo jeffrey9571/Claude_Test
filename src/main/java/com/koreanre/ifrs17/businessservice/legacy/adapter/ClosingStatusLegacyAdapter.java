@@ -3,9 +3,11 @@ package com.koreanre.ifrs17.businessservice.legacy.adapter;
 import com.koreanre.ifrs17.businessservice.core.exception.LegacyServiceException;
 import com.koreanre.ifrs17.businessservice.legacy.existing.ExistingClosingService;
 import com.koreanre.ifrs17.businessservice.legacy.existing.LegacyClosingStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /** 10.3 Legacy Adapter: 기존 Service 호출과 DTO 변환. */
+@Slf4j
 @Component
 public class ClosingStatusLegacyAdapter {
 
@@ -16,6 +18,7 @@ public class ClosingStatusLegacyAdapter {
     }
 
     public LegacyClosingStatus findStatus(String yearMonth, String closingType) {
+        log.info(">>> [진입] ClosingStatusLegacyAdapter.findStatus() - 기존 결산 Service 호출. yearMonth={}", yearMonth);
         try {
             return existingClosingService.findClosingStatus(yearMonth, closingType);
         } catch (Exception e) {

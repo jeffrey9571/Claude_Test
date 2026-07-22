@@ -5,6 +5,7 @@ import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceRoleRepos
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceVersionRepository;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsService;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceVersion;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * 4.2 ServiceMetadataRepository: 서비스 버전·상태·권한·Timeout 조회.
  * 활성(active_yn=Y, status_code=ACTIVE) Catalog 항목만 실행 대상으로 반환한다.
  */
+@Slf4j
 @Component
 public class ServiceMetadataRepository {
 
@@ -33,6 +35,8 @@ public class ServiceMetadataRepository {
 
     /** version이 없으면 최신 ACTIVE 버전을 사용한다. */
     public Optional<ServiceMetadata> findActive(String serviceId, String version) {
+        log.info(">>> [진입] ServiceMetadataRepository.findActive() - serviceId={}, 요청버전={}",
+                serviceId, StringUtils.hasText(version) ? version : "(미지정→최신 ACTIVE)");
         Optional<BsService> serviceOpt = serviceRepository.findById(serviceId)
                 .filter(BsService::isActive);
         if (!serviceOpt.isPresent()) {

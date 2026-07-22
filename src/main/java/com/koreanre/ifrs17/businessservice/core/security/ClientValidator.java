@@ -6,12 +6,14 @@ import com.koreanre.ifrs17.businessservice.persistence.mapper.BsClientRepository
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsClientServiceRepository;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsClient;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsClientService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * 4.3 표준 처리 순서 3단계 "호출 Client 검증".
  * 3.3 네트워크 및 호출 원칙: MCP/Portal 호출 Client ID는 허용목록으로 관리한다.
  */
+@Slf4j
 @Component
 public class ClientValidator {
 
@@ -24,6 +26,7 @@ public class ClientValidator {
     }
 
     public void validate(String clientId, String serviceId) {
+        log.info(">>> [진입] ClientValidator.validate() - Client 허용목록 검증. clientId={}, serviceId={}", clientId, serviceId);
         BsClient client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new AuthenticationException("등록되지 않은 호출 Client입니다: " + clientId));
         if (!client.isActive()) {

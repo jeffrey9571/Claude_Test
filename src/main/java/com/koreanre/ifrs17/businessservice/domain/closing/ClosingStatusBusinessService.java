@@ -5,11 +5,13 @@ import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceHandler;
 import com.koreanre.ifrs17.businessservice.core.validator.ValidationUtils;
 import com.koreanre.ifrs17.businessservice.legacy.adapter.ClosingStatusLegacyAdapter;
 import com.koreanre.ifrs17.businessservice.legacy.existing.LegacyClosingStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
  * 10.2 Reference Implementation. 9.1 IFRS17.CLOSING.STATUS: 결산 진행상태 조회.
  */
+@Slf4j
 @Component("closingStatusBusinessService")
 public class ClosingStatusBusinessService
         implements BusinessServiceHandler<ClosingStatusRequest, ClosingStatusResponse> {
@@ -43,6 +45,8 @@ public class ClosingStatusBusinessService
 
     @Override
     public ClosingStatusResponse process(ServiceContext context, ClosingStatusRequest request) {
+        log.info(">>> [진입] ClosingStatusBusinessService.process() - 결산 진행상태 조회. closingYearMonth={}",
+                request.getClosingYearMonth());
         LegacyClosingStatus legacy = adapter.findStatus(request.getClosingYearMonth(), request.getClosingType());
         return ClosingStatusMapper.toResponse(request.getClosingYearMonth(), request.getClosingType(), legacy);
     }
