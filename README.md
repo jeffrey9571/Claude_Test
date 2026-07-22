@@ -100,3 +100,28 @@ mvn spring-boot:run   # PostgreSQL 접속정보는 application.yml 또는 환경
 이 저장소의 구현 범위는 착수 기준서(v1.3)가 정의한 Phase 1(READ 서비스 5종 +
 공통 Framework + 단순화된 Console)까지이며, Action 서비스·복잡한 Lifecycle/승인
 Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
+
+## 알려진 제약: 서비스는 "최신 버전" 기준으로만 조회/관리됨
+
+`BS_SERVICE_VERSION`은 하나의 `service_id`에 여러 `version`(1.0, 1.1, 2.0 ...)이
+동시에 존재할 수 있도록 설계되어 있고, **실행(런타임) 계층은 이를 완전히 지원**합니다.
+`POST /execute` 호출 시 `serviceVersion`을 지정하면 `ServiceMetadataRepository
+.findActive(serviceId, version)`이 정확히 그 버전을 찾아 해당 Bean을 실행하며,
+버전별로 서로 다른 `implementation_bean`(Spring Bean)을 매핑할 수 있습니다.
+
+다만 아래 두 곳은 **서비스당 최신 버전(가장 최근 `effective_from`) 하나만** 보여주도록
+구현되어 있어, 한 Service ID에 여러 버전이 등록돼 있어도 예전 버전은 화면/응답에
+노출되지 않습니다 (DB에는 남아있고 실제 호출은 계속 가능).
+
+- **Catalog API** (`GET /catalog`, `GET /catalog/{serviceId}`): `CatalogQueryService
+  .toEntry()`가 `findFirstByServiceIdAndStatusCodeOrderByEffectiveFromDesc(serviceId,
+  "ACTIVE")`로 ACTIVE 버전 중 최신 1건만 `activeVersion` 필드에 담아 반환한다.
+- **Console CON-01 서비스 명세 관리** (`/api/console/services`): `ServiceSpecService
+  .requireLatestVersion()`이 항상 최신 버전만 조회/수정 대상으로 삼는다. 특정 Service
+  ID의 전체 버전 이력을 목록으로 보여주는 API/화면은 없다.
+
+문서(IFRS17-BSL-SDD-001 v1.3)는 Catalog/Console 응답의 정확한 JSON 스키마를
+규정하지 않아, 이는 문서상 제약이 아니라 Phase 1 단순화 구현 과정에서 생긴 설계상
+공백이다. 다중 버전을 화면/API에서 목록으로 노출하려면 `CatalogEntry`에 `versions`
+배열 필드를 추가(하위호환 유지 가능)하고, Console에 버전 목록 조회 API
+(`GET /api/console/services/{serviceId}/versions`)를 추가하는 확장이 필요하다.
