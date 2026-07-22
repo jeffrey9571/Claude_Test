@@ -101,7 +101,7 @@ mvn spring-boot:run   # PostgreSQL 접속정보는 application.yml 또는 환경
 공통 Framework + 단순화된 Console)까지이며, Action 서비스·복잡한 Lifecycle/승인
 Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
 
-## 알려진 제약: 서비스는 "최신 버전" 기준으로만 조회/관리됨
+### 추가검토사항: 서비스는 "최신 버전" 기준으로만 조회/관리됨
 
 `BS_SERVICE_VERSION`은 하나의 `service_id`에 여러 `version`(1.0, 1.1, 2.0 ...)이
 동시에 존재할 수 있도록 설계되어 있고, **실행(런타임) 계층은 이를 완전히 지원**합니다.
