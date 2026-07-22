@@ -15,7 +15,7 @@ CREATE TABLE business_service.bs_service (
   source_system     varchar(30)  NOT NULL DEFAULT 'IFRS17',
   service_description text,
   owner_department  varchar(50)  NOT NULL,
-  active_yn         char(1)      NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
+  active_yn         varchar(1)      NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
   created_at        timestamp    NOT NULL DEFAULT current_timestamp,
   created_by        varchar(30)  NOT NULL,
   updated_at        timestamp    NOT NULL DEFAULT current_timestamp,
@@ -46,7 +46,7 @@ CREATE TABLE business_service.bs_service_param (
   version           varchar(20)  NOT NULL,
   param_name        varchar(100) NOT NULL,
   param_type        varchar(30)  NOT NULL DEFAULT 'STRING',
-  required_yn       char(1)      NOT NULL DEFAULT 'N' CHECK (required_yn IN ('Y','N')),
+  required_yn       varchar(1)      NOT NULL DEFAULT 'N' CHECK (required_yn IN ('Y','N')),
   param_description varchar(300),
   display_order     integer NOT NULL DEFAULT 0,
   PRIMARY KEY (service_id, version, param_name),
@@ -71,7 +71,7 @@ CREATE TABLE business_service.bs_client (
   client_name       varchar(200) NOT NULL,
   channel_type      varchar(30) NOT NULL DEFAULT 'PORTAL' CHECK (channel_type IN ('PORTAL','MCP','TEAMS','BATCH','OTHER')),
   allowed_ip_cidr   varchar(50),
-  active_yn         char(1) NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
+  active_yn         varchar(1) NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
   created_at        timestamp NOT NULL DEFAULT current_timestamp,
   created_by        varchar(30) NOT NULL
 );
@@ -82,7 +82,7 @@ CREATE TABLE business_service.bs_client (
 CREATE TABLE business_service.bs_client_service (
   client_id         varchar(80) NOT NULL REFERENCES business_service.bs_client(client_id),
   service_id        varchar(100) NOT NULL REFERENCES business_service.bs_service(service_id),
-  active_yn         char(1) NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
+  active_yn         varchar(1) NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
   PRIMARY KEY (client_id, service_id)
 );
 
@@ -164,7 +164,7 @@ CREATE TABLE business_service.bs_service_cache_event (
   event_type        varchar(20) NOT NULL DEFAULT 'INVALIDATE' CHECK (event_type IN ('INVALIDATE','RELOAD')),
   issued_at         timestamp NOT NULL DEFAULT current_timestamp,
   issued_by         varchar(30) NOT NULL,
-  consumed_yn       char(1) NOT NULL DEFAULT 'N' CHECK (consumed_yn IN ('Y','N'))
+  consumed_yn       varchar(1) NOT NULL DEFAULT 'N' CHECK (consumed_yn IN ('Y','N'))
 );
 
 -- =====================================================================
@@ -189,7 +189,7 @@ CREATE TABLE business_service.bs_call_log (
   error_id          varchar(80),
   parameter_hash    varchar(128),
   result_count      integer,
-  sensitive_access_flag char(1) NOT NULL DEFAULT 'N' CHECK (sensitive_access_flag IN ('Y','N')),
+  sensitive_access_flag varchar(1) NOT NULL DEFAULT 'N' CHECK (sensitive_access_flag IN ('Y','N')),
   remote_ip         varchar(64),
   auth_type         varchar(30),
   authorization_result varchar(20),

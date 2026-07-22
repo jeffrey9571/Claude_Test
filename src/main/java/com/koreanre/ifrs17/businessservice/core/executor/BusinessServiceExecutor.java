@@ -80,8 +80,9 @@ public class BusinessServiceExecutor {
             clientValidator.validate(context.getClientId(), serviceId);
 
             // 5. Service Catalog에서 활성 버전 조회
-            ServiceMetadata metadata = metadataRepository.findActive(serviceId, serviceVersion)
-                    .orElseThrow(() -> new ServiceNotFoundException(serviceId, String.valueOf(serviceVersion)));
+            String requestedVersion = serviceVersion;
+            ServiceMetadata metadata = metadataRepository.findActive(serviceId, requestedVersion)
+                    .orElseThrow(() -> new ServiceNotFoundException(serviceId, String.valueOf(requestedVersion)));
             serviceVersion = metadata.getVersion();
 
             // 6. 서비스/역할 권한 확인

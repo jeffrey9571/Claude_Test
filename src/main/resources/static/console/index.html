@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>IFRS17 Business Service Console</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", Arial, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
+  header { background: #1b3a5c; color: #fff; padding: 14px 20px; }
+  header h1 { margin: 0; font-size: 18px; }
+  header p { margin: 4px 0 0; font-size: 12px; color: #cbd8e6; }
+  .tabs { display: flex; background: #22415f; }
+  .tabs button { flex: none; padding: 10px 20px; background: transparent; border: none; color: #d8e3ef;
+                 cursor: pointer; font-size: 14px; border-bottom: 3px solid transparent; }
+  .tabs button.active { color: #fff; border-bottom-color: #4da3ff; font-weight: bold; }
+  .settings { background: #fff; padding: 10px 20px; border-bottom: 1px solid #dde3ea; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .settings label { font-size: 12px; color: #555; display: flex; flex-direction: column; gap: 2px; }
+  .settings input { padding: 5px 6px; border: 1px solid #ccd3da; border-radius: 4px; font-size: 12px; width: 160px; }
+  main { padding: 16px 20px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .grid { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+  .card { background: #fff; border: 1px solid #dde3ea; border-radius: 6px; padding: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eef1f4; }
+  tr.row:hover { background: #f0f6ff; cursor: pointer; }
+  tr.row.selected { background: #dcebff; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; color: #fff; }
+  .badge.on { background: #2e8b57; }
+  .badge.off { background: #a0a6ad; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; color: #555; margin-bottom: 3px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 6px 8px; border: 1px solid #ccd3da; border-radius: 4px; font-size: 13px; }
+  .field textarea { font-family: Consolas, monospace; font-size: 12px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .actions { margin-top: 12px; display: flex; gap: 8px; }
+  button.btn { padding: 7px 14px; border: none; border-radius: 4px; background: #2b6cb0; color: #fff; cursor: pointer; font-size: 13px; }
+  button.btn.secondary { background: #5f6a76; }
+  button.btn.danger { background: #b0413e; }
+  button.btn.success { background: #2e8b57; }
+  pre.result { background: #10233a; color: #d7f0ff; padding: 12px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; max-height: 420px; overflow: auto; }
+  .status-line { font-size: 13px; margin: 6px 0; }
+  .status-line b { font-family: Consolas, monospace; }
+  .param-row { display: grid; grid-template-columns: 1fr 90px 60px 1fr 40px; gap: 6px; margin-bottom: 6px; align-items: center; }
+  .param-row input[type=checkbox] { width: auto; }
+  small.hint { color: #888; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>IFRS17 Business Service Console</h1>
+  <p>IFRS17-BSL-SDD-001 v1.3 8장 · Phase 1: 서비스 명세 관리 / 서비스 Test</p>
+</header>
+
+<div class="tabs">
+  <button id="tabBtn-spec" class="active" onclick="showTab('spec')">CON-01 서비스 명세 관리</button>
+  <button id="tabBtn-test" onclick="showTab('test')">CON-02 서비스 Test</button>
+</div>
+
+<div class="settings">
+  <label>Authorization<input id="hdrAuth" value="Bearer console-operator-token"></label>
+  <label>X-Client-ID<input id="hdrClient" value="MCP-IFRS17-01"></label>
+  <label>X-User-ID<input id="hdrUser" value="OPERATOR01"></label>
+  <label>X-User-Roles<input id="hdrRoles" value="BS_CONSOLE_ADMIN,IFRS17_CLOSING_VIEW,IFRS17_JOURNAL_VIEW,IFRS17_EXPENSE_VIEW,IFRS17_STATEMENT_VIEW,IFRS17_CSM_VIEW"></label>
+  <label>X-Department-Code<input id="hdrDept" value="IT"></label>
+</div>
+
+<main>
+
+  <!-- ============ CON-01 서비스 명세 관리 ============ -->
+  <section id="panel-spec" class="panel active">
+    <div class="grid">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong>서비스 목록</strong>
+          <button class="btn" onclick="newSpec()">신규</button>
+        </div>
+        <table>
+          <thead><tr><th>Service ID</th><th>버전</th><th>사용</th></tr></thead>
+          <tbody id="specList"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <strong id="specFormTitle">신규 서비스 등록</strong>
+        <div class="row2" style="margin-top:10px;">
+          <div class="field"><label>Service ID (예: IFRS17.CLOSING.STATUS)</label><input id="f_serviceId"></div>
+          <div class="field"><label>버전</label><input id="f_version" value="1.0"></div>
+        </div>
+        <div class="field"><label>서비스명</label><input id="f_serviceName"></div>
+        <div class="row2">
+          <div class="field"><label>도메인 코드</label><input id="f_domainCode"></div>
+          <div class="field"><label>서비스 유형</label>
+            <select id="f_serviceType"><option value="READ">READ</option><option value="ACTION">ACTION</option></select>
+          </div>
+        </div>
+        <div class="field"><label>서비스 설명</label><textarea id="f_serviceDescription" rows="2"></textarea></div>
+        <div class="row2">
+          <div class="field"><label>Spring Bean명</label><input id="f_implementationBean"></div>
+          <div class="field"><label>담당 부서</label><input id="f_ownerDepartment"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Timeout(ms)</label><input id="f_timeoutMs" value="30000"></div>
+          <div class="field"><label>허용 역할(쉼표 구분)</label><input id="f_allowedRoles" placeholder="IFRS17_CLOSING_VIEW"></div>
+        </div>
+
+        <div class="field">
+          <label>요청 파라미터 명세</label>
+          <div id="paramRows"></div>
+          <button class="btn secondary" onclick="addParamRow()">+ 파라미터 추가</button>
+        </div>
+
+        <div class="actions">
+          <button class="btn success" onclick="saveSpec()">저장</button>
+          <button class="btn" onclick="toggleActive(true)">사용으로 전환</button>
+          <button class="btn danger" onclick="toggleActive(false)">미사용으로 전환</button>
+        </div>
+        <div id="specMessage" class="status-line"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CON-02 서비스 Test ============ -->
+  <section id="panel-test" class="panel">
+    <div class="grid">
+      <div class="card">
+        <div class="field">
+          <label>서비스 선택</label>
+          <select id="t_serviceSelect" onchange="onTestServiceChange()"></select>
+        </div>
+        <div class="field"><label>serviceVersion</label><input id="t_serviceVersion" value="1.0"></div>
+        <div class="field">
+          <label>Request JSON (parameters/options 포함)</label>
+          <textarea id="t_requestJson" rows="12">{
+  "serviceVersion": "1.0",
+  "parameters": {
+    "closingYearMonth": "2026-06"
+  },
+  "options": { "locale": "ko-KR", "includeDetails": false }
+}</textarea>
+        </div>
+        <button class="btn" onclick="executeTest()">실행</button>
+      </div>
+
+      <div class="card">
+        <strong>실행 결과</strong>
+        <div class="status-line">HTTP Status: <b id="resHttpStatus">-</b> &nbsp;|&nbsp; 처리시간: <b id="resElapsed">-</b> ms</div>
+        <div class="status-line">오류코드: <b id="resErrorCode">-</b> &nbsp; 오류메시지: <b id="resErrorMessage">-</b></div>
+        <pre class="result" id="resBody">Test를 실행하면 결과가 여기에 표시됩니다.</pre>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+let specs = [];
+let selectedServiceId = null;
+
+function headers(extra) {
+  const h = {
+    'Authorization': document.getElementById('hdrAuth').value,
+    'X-Client-ID': document.getElementById('hdrClient').value,
+    'X-User-ID': document.getElementById('hdrUser').value,
+    'X-User-Roles': document.getElementById('hdrRoles').value,
+    'X-Department-Code': document.getElementById('hdrDept').value,
+    'Content-Type': 'application/json'
+  };
+  return Object.assign(h, extra || {});
+}
+
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tabBtn-' + name).classList.add('active');
+  if (name === 'test') { refreshTestServiceOptions(); }
+}
+
+/* ---------- CON-01 ---------- */
+
+async function loadSpecs() {
+  const res = await fetch('/api/console/services', { headers: headers() });
+  if (!res.ok) { setSpecMessage('목록 조회 실패: HTTP ' + res.status); return; }
+  specs = await res.json();
+  renderSpecList();
+}
+
+function renderSpecList() {
+  const tbody = document.getElementById('specList');
+  tbody.innerHTML = '';
+  specs.forEach(s => {
+    const tr = document.createElement('tr');
+    tr.className = 'row' + (s.serviceId === selectedServiceId ? ' selected' : '');
+    tr.onclick = () => loadSpecDetail(s.serviceId);
+    tr.innerHTML = `<td>${s.serviceId}</td><td>${s.activeVersion || '-'}</td>` +
+      `<td><span class="badge ${s.active ? 'on' : 'off'}">${s.active ? '사용' : '미사용'}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function newSpec() {
+  selectedServiceId = null;
+  document.getElementById('specFormTitle').textContent = '신규 서비스 등록';
+  ['f_serviceId','f_serviceName','f_domainCode','f_serviceDescription','f_implementationBean',
+   'f_ownerDepartment','f_allowedRoles'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f_serviceId').disabled = false;
+  document.getElementById('f_version').value = '1.0';
+  document.getElementById('f_timeoutMs').value = '30000';
+  document.getElementById('paramRows').innerHTML = '';
+  addParamRow();
+  setSpecMessage('');
+  renderSpecList();
+}
+
+async function loadSpecDetail(serviceId) {
+  selectedServiceId = serviceId;
+  const res = await fetch('/api/console/services/' + encodeURIComponent(serviceId), { headers: headers() });
+  if (!res.ok) { setSpecMessage('상세 조회 실패: HTTP ' + res.status); return; }
+  const d = await res.json();
+  document.getElementById('specFormTitle').textContent = serviceId + (d.beanRegistered ? '' : ' (⚠ Bean 미등록/불일치)');
+  document.getElementById('f_serviceId').value = d.serviceId;
+  document.getElementById('f_serviceId').disabled = true;
+  document.getElementById('f_version').value = d.version;
+  document.getElementById('f_serviceName').value = d.serviceName;
+  document.getElementById('f_domainCode').value = d.domainCode;
+  document.getElementById('f_serviceType').value = d.serviceType;
+  document.getElementById('f_serviceDescription').value = d.serviceDescription || '';
+  document.getElementById('f_implementationBean').value = d.implementationBean;
+  document.getElementById('f_ownerDepartment').value = d.ownerDepartment;
+  document.getElementById('f_timeoutMs').value = d.timeoutMs;
+  document.getElementById('f_allowedRoles').value = (d.allowedRoles || []).join(',');
+
+  const paramRows = document.getElementById('paramRows');
+  paramRows.innerHTML = '';
+  (d.requestParams || []).forEach(p => addParamRow(p));
+  if ((d.requestParams || []).length === 0) addParamRow();
+
+  setSpecMessage('');
+  renderSpecList();
+}
+
+function addParamRow(param) {
+  const wrap = document.getElementById('paramRows');
+  const row = document.createElement('div');
+  row.className = 'param-row';
+  row.innerHTML = `
+    <input class="p_name" placeholder="파라미터명" value="${param ? param.paramName : ''}">
+    <input class="p_type" placeholder="타입" value="${param ? param.paramType : 'STRING'}">
+    <label style="font-size:11px;"><input type="checkbox" class="p_required" ${param && param.required ? 'checked' : ''}> 필수</label>
+    <input class="p_desc" placeholder="설명" value="${param ? (param.paramDescription || '') : ''}">
+    <button class="btn danger" style="padding:4px 6px;" onclick="this.parentElement.remove()">×</button>`;
+  wrap.appendChild(row);
+}
+
+function collectParams() {
+  return Array.from(document.querySelectorAll('#paramRows .param-row')).map((row, idx) => ({
+    paramName: row.querySelector('.p_name').value,
+    paramType: row.querySelector('.p_type').value || 'STRING',
+    required: row.querySelector('.p_required').checked,
+    paramDescription: row.querySelector('.p_desc').value,
+    displayOrder: idx + 1
+  })).filter(p => p.paramName);
+}
+
+function buildSpecRequest() {
+  return {
+    serviceId: document.getElementById('f_serviceId').value.trim(),
+    serviceName: document.getElementById('f_serviceName').value.trim(),
+    domainCode: document.getElementById('f_domainCode').value.trim(),
+    serviceType: document.getElementById('f_serviceType').value,
+    serviceDescription: document.getElementById('f_serviceDescription').value,
+    ownerDepartment: document.getElementById('f_ownerDepartment').value.trim(),
+    version: document.getElementById('f_version').value.trim(),
+    implementationBean: document.getElementById('f_implementationBean').value.trim(),
+    timeoutMs: parseInt(document.getElementById('f_timeoutMs').value, 10) || 30000,
+    requestParams: collectParams(),
+    allowedRoles: document.getElementById('f_allowedRoles').value.split(',').map(s => s.trim()).filter(Boolean),
+    active: false
+  };
+}
+
+async function saveSpec() {
+  const body = buildSpecRequest();
+  const isUpdate = !!selectedServiceId;
+  const url = isUpdate ? '/api/console/services/' + encodeURIComponent(selectedServiceId) : '/api/console/services';
+  const res = await fetch(url, { method: isUpdate ? 'PUT' : 'POST', headers: headers(), body: JSON.stringify(body) });
+  const data = await res.json();
+  if (!res.ok) { setSpecMessage('저장 실패: ' + (data.error ? data.error.message : ('HTTP ' + res.status))); return; }
+  setSpecMessage('저장되었습니다.');
+  await loadSpecs();
+  await loadSpecDetail(data.serviceId);
+}
+
+async function toggleActive(active) {
+  if (!selectedServiceId) { setSpecMessage('먼저 서비스를 선택하거나 저장하세요.'); return; }
+  const res = await fetch('/api/console/services/' + encodeURIComponent(selectedServiceId) + '/active', {
+    method: 'PATCH', headers: headers(), body: JSON.stringify({ active })
+  });
+  const data = await res.json();
+  if (!res.ok) { setSpecMessage('전환 실패: ' + (data.error ? data.error.message : ('HTTP ' + res.status))); return; }
+  setSpecMessage(active ? '사용으로 전환되었습니다.' : '미사용으로 전환되었습니다.');
+  await loadSpecs();
+  await loadSpecDetail(selectedServiceId);
+}
+
+function setSpecMessage(msg) {
+  document.getElementById('specMessage').textContent = msg;
+}
+
+/* ---------- CON-02 ---------- */
+
+function refreshTestServiceOptions() {
+  const select = document.getElementById('t_serviceSelect');
+  select.innerHTML = '';
+  specs.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.serviceId;
+    opt.textContent = s.serviceId + (s.active ? '' : ' [미사용]');
+    select.appendChild(opt);
+  });
+  if (specs.length) onTestServiceChange();
+}
+
+function onTestServiceChange() {
+  const serviceId = document.getElementById('t_serviceSelect').value;
+  document.getElementById('t_requestJson').value = JSON.stringify({
+    serviceVersion: document.getElementById('t_serviceVersion').value || '1.0',
+    parameters: { closingYearMonth: '2026-06' },
+    options: { locale: 'ko-KR', includeDetails: false }
+  }, null, 2);
+}
+
+async function executeTest() {
+  const serviceId = document.getElementById('t_serviceSelect').value;
+  let body;
+  try {
+    body = JSON.parse(document.getElementById('t_requestJson').value);
+  } catch (e) {
+    alert('Request JSON 형식이 올바르지 않습니다: ' + e.message);
+    return;
+  }
+  const started = performance.now();
+  const res = await fetch('/api/business-services/v1/' + encodeURIComponent(serviceId) + ':execute', {
+    method: 'POST', headers: headers(), body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  const clientElapsed = Math.round(performance.now() - started);
+
+  document.getElementById('resHttpStatus').textContent = res.status;
+  document.getElementById('resElapsed').textContent = (data.elapsedMs != null ? data.elapsedMs : clientElapsed);
+  document.getElementById('resErrorCode').textContent = data.error ? data.error.code : '-';
+  document.getElementById('resErrorMessage').textContent = data.error ? data.error.message : '-';
+  document.getElementById('resBody').textContent = JSON.stringify(data, null, 2);
+}
+
+loadSpecs();
+</script>
+
+</body>
+</html>

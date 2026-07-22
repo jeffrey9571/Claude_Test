@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:ifrs17_bsl_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: business_service
+  flyway:
+    enabled: true
+    schemas: business_service
+    default-schema: business_service
+    locations: classpath:db/migration
+
+business-service:
+  audit:
+    fail-closed: false
