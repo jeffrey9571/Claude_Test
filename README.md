@@ -128,6 +128,26 @@ Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
   배열 필드를 추가(하위호환 유지 가능)하고, Console에 버전 목록 조회 API
   (`GET /api/console/services/{serviceId}/versions`)를 추가하는 확장이 필요하다.
 
-- **JSON 통신 구현**
+- **JSON 통신 구현 (넥사크로17 화면 연동)**
 
-  (TODO: 추후 작성)
+  현재 IFRS17 업무 화면은 **넥사크로17(Nexacro17)** 기반이며, 기존 화면·배치는
+  `gfn_transaction`을 통해 **XML** 방식으로 서버와 통신한다. 반면 본 Business
+  Service Layer는 설계서 2.1절("API 응답에는 화면 표시용 HTML이 아니라 구조화
+  JSON을 반환한다")에 따라 **JSON 기반 REST API**로 구현되어 있어, 두 방식이
+  서로 다르다.
+
+  따라서 넥사크로17 화면에서 이 API를 직접 호출하려면 넥사크로17이 기본 제공하는
+  `gfn_transaction`(XML 통신 함수)을 그대로 재사용할 수 없고, **별도의 JavaScript
+  통신 로직(예: 넥사크로17의 External Script 영역에서 `XMLHttpRequest`/`fetch`
+  등으로 JSON 요청·응답 처리)을 새로 구현**해야 한다.
+
+  - **인증/Header 전달**: `Authorization`, `X-Client-ID`, `X-User-ID` 등 필수
+    Header(5.2절)를 JS 통신 로직에서 직접 채워 넣어야 하며, 기존 SSO 세션 정보를
+    넥사크로17 → JS로 어떻게 넘길지 확인 필요 (미결사항 #2와 연결됨)
+  - **에러 처리**: 표준 Error Response(5.5절, `error.code`/`error.message`)를
+    넥사크로17 화면의 기존 오류 처리 패턴과 어떻게 맞출지 정의 필요
+  - **영향 범위**: 이 저장소(Business Service Layer)는 JSON API 제공까지가
+    범위이며, 넥사크로17 화면 쪽 JS 통신 모듈 구현은 화면 개발 담당(별도 산출물)
+    쪽 작업이다.
+
+  (TODO: 구체적인 JS 통신 모듈 설계/구현 방식은 추후 보강)
