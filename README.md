@@ -89,15 +89,25 @@ mvn spring-boot:run   # PostgreSQL 접속정보는 application.yml 또는 환경
 > 이 방법은 `local_demo` 브랜치에 포함된 `local` 프로파일(H2 인메모리)을 사용한다.
 > `master` 브랜치에는 없으므로, 화면을 빠르게 확인하려면 `local_demo` 브랜치를 사용한다.
 
-필요한 것은 **JDK 8+** 와 **Maven** 뿐이다. DB를 따로 설치하지 않아도 H2 인메모리 DB에
-Flyway가 테이블과 파일럿 5종 시드 데이터를 자동 생성한다.
+필요한 것은 **JDK 8+** 하나뿐이다. Maven Wrapper(`mvnw`)가 포함되어 있어 Maven을
+따로 설치하지 않아도 되고, DB도 설치하지 않아도 H2 인메모리 DB에 Flyway가 테이블과
+파일럿 5종 시드 데이터를 자동 생성한다.
 
 ```bash
 git clone -b local_demo https://github.com/jeffrey9571/Claude_Test.git
 cd Claude_Test
-mvn clean package -DskipTests
+
+# macOS / Linux
+./mvnw clean package -DskipTests
 java -jar target/ifrs17-business-service-layer.jar --spring.profiles.active=local
+
+# Windows (명령 프롬프트/PowerShell)
+#   mvnw.cmd clean package -DskipTests
+#   java -jar target\ifrs17-business-service-layer.jar --spring.profiles.active=local
 ```
+
+> `mvnw`는 최초 실행 시 지정된 Maven 배포본을 자동으로 내려받는다(인터넷 필요).
+> Maven이 이미 설치돼 있다면 `mvnw` 대신 `mvn`을 그대로 써도 된다.
 
 기동 후 브라우저에서:
 
