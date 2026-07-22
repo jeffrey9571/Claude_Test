@@ -127,3 +127,7 @@ Workflow·대시보드는 8.1/1.4에 따라 의도적으로 제외했습니다.
   공백이다. 다중 버전을 화면/API에서 목록으로 노출하려면 `CatalogEntry`에 `versions`
   배열 필드를 추가(하위호환 유지 가능)하고, Console에 버전 목록 조회 API
   (`GET /api/console/services/{serviceId}/versions`)를 추가하는 확장이 필요하다.
+
+- **JSON 통신 구현**
+
+  (TODO: 추후 작성)
