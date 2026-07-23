@@ -3,13 +3,13 @@
 # 운영(기본 프로파일)은 application.yml의 PostgreSQL 설정을 그대로 사용한다.
 spring:
   datasource:
-    url: jdbc:h2:mem:ifrs17_bsl;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=VALUE
+    url: jdbc:h2:mem:ifrs17_bsl;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
       hibernate:
         default_schema: business_service
