@@ -6,7 +6,7 @@ Service Layer입니다.
 
 ## 기술 스택
 
-- Java 8, Spring Boot 2.7 (Spring MVC / Spring Data JPA)
+- Java 8, Spring Boot 2.1.6 (Spring MVC / Spring Data JPA)
 - PostgreSQL (운영), H2 PostgreSQL-호환 모드 (테스트)
 - Flyway (DB 마이그레이션)
 - Maven
