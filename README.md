@@ -66,6 +66,20 @@ java -jar target/ifrs17-business-service-layer.jar --spring.profiles.active=loca
 H2는 인메모리이므로 애플리케이션을 종료하면 데이터가 초기화된다(데모 목적). 운영은
 `master` 브랜치의 기본 프로파일(PostgreSQL)을 사용한다.
 
+### 화면 예시
+
+앱을 띄운 뒤 관리 콘솔(<http://localhost:8080/console/index.html>)에 접속하면 아래와 같은
+두 화면을 확인할 수 있다.
+
+**CON-01 서비스 명세 관리** — 등록된 서비스 목록과 선택한 서비스의 상세 명세를 조회·수정한다.
+
+![그림 1. CON-01 서비스 명세 관리 화면](docs/images/con01_service_spec.png)
+
+**CON-02 서비스 Test** — 서비스를 선택해 Request JSON을 입력하고 [실행]을 누르면 HTTP 응답과
+처리 결과(상태·결과 JSON)를 바로 확인할 수 있다.
+
+![그림 2. CON-02 서비스 Test 화면](docs/images/con02_service_test.png)
+
 ### 요청 흐름 로그로 확인하기
 
 `local_demo` 브랜치에는 요청이 서버의 각 계층을 통과할 때마다 진입 로그(`>>> [진입] ...`)가
