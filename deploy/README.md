@@ -80,18 +80,62 @@ cat /opt/ifrs17/duckdns.log      # DuckDNS 응답(OK 여야 정상)
   - Caddy에 Basic Auth 추가(`basicauth` 지시어) 등 인증을 반드시 붙인다.
 - 콘솔 API는 `X-User-Roles: BS_CONSOLE_ADMIN` 헤더를 요구한다(운영자 권한 제한).
 
-## 소스 업데이트 반영
+## 소스 업데이트 반영 (수동)
 
-master가 갱신되면 VM에서:
-
-```bash
-sudo bash /path/to/Claude_Test/deploy/oci-setup.sh   # 재실행 시 fetch+rebuild+재기동
-```
-
-또는 수동으로:
+master가 갱신되면 VM에서 경량 업데이트 스크립트 하나만 실행하면 된다
+(pull → 빌드 → 재기동):
 
 ```bash
-cd /opt/ifrs17/src && sudo -u ifrs17 git pull && sudo -u ifrs17 ./mvnw -q clean package -DskipTests
-sudo install -o ifrs17 -g ifrs17 target/ifrs17-business-service-layer.jar /opt/ifrs17/
-sudo systemctl restart ifrs17
+sudo bash /opt/ifrs17/src/deploy/update.sh
 ```
+
+## 자동 배포 (GitHub Actions) — 권장
+
+master에 push되는 즉시 GitHub가 VM에 SSH로 접속해 위 `update.sh`를 대신 실행한다.
+**한 번 설정해두면, 이후 소스가 바뀌어도 VM에서 아무 명령도 칠 필요가 없다.**
+공개(public) 저장소이므로 GitHub Actions 실행은 **무제한 무료**다.
+
+```
+master에 push  ──▶  GitHub Actions 자동 실행  ──▶  VM에 SSH → update.sh (pull·빌드·재기동)
+```
+
+워크플로우 파일은 이미 저장소에 포함돼 있다: `.github/workflows/deploy.yml`.
+작동시키려면 **아래 두 단계만** 하면 된다.
+
+### 1) VM 접속용 SSH 키 준비
+
+가장 간단한 방법은 **OCI VM을 만들 때 사용한 SSH 키 쌍을 그대로 재사용**하는 것이다
+(그 키의 공개키는 이미 VM에 등록돼 있다). 이때 개인키 파일 내용이 곧 `VM_SSH_KEY`다.
+
+전용 배포 키를 새로 만들고 싶다면(더 안전) VM에서:
+
+```bash
+ssh-keygen -t ed25519 -f ~/deploy_key -N ""          # 키 쌍 생성
+cat ~/deploy_key.pub >> ~/.ssh/authorized_keys        # 공개키를 VM에 등록
+cat ~/deploy_key                                       # 이 개인키 전체를 VM_SSH_KEY에 넣는다
+```
+
+> OCI Ubuntu의 기본 사용자 `ubuntu`는 비밀번호 없이 `sudo`가 되므로(cloud-init 기본),
+> 워크플로우의 `sudo bash ... update.sh`가 그대로 동작한다.
+
+### 2) GitHub Secret 3개 등록
+
+저장소 **Settings → Secrets and variables → Actions → New repository secret**에서:
+
+| 이름 | 값 |
+| --- | --- |
+| `VM_HOST` | VM 공인 IP (예: `140.238.1.2`) |
+| `VM_USER` | SSH 사용자 (OCI Ubuntu 기본 `ubuntu`) |
+| `VM_SSH_KEY` | SSH **개인키 전체 내용** (`-----BEGIN ... END-----` 포함) |
+
+> ⚠️ 개인키는 반드시 **Secret**으로만 넣는다. 소스코드·README에 절대 붙여넣지 않는다.
+> Claude(작성자)는 이 Secret에 접근할 수 없으므로, 이 등록은 저장소 소유자가 직접 해야 한다.
+
+### 동작 확인
+
+- master에 push하거나, **Actions 탭 → Deploy to OCI VM → Run workflow**로 수동 실행
+- 진행 상황은 **Actions 탭**에서 실시간 로그로 확인
+- 실패 시: SSH 접속(키/IP/보안그룹 22번 포트), VM의 `/opt/ifrs17/src` 존재 여부부터 점검
+
+> VM을 아직 안 만들었어도 무방하다. 워크플로우는 Secret이 없으면 실패만 할 뿐이니,
+> 나중에 VM 준비 후 Secret 3개만 채우면 그때부터 자동 배포가 작동한다.
