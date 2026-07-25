@@ -68,53 +68,46 @@
 
 <main>
 
-  <!-- ============ CON-01 서비스 명세 관리 ============ -->
+  <!-- ============ CON-01 서비스 명세 관리 (설계서 8.3 / 그림 8-1) ============ -->
   <section id="panel-spec" class="panel active">
     <div class="grid">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <strong>서비스 목록</strong>
-          <button class="btn" onclick="newSpec()">신규</button>
+        <strong>서비스 목록</strong>
+        <div style="display:flex; gap:6px; margin:8px 0;">
+          <input id="specSearch" placeholder="서비스 ID / 서비스명 검색"
+                 style="flex:1; padding:6px 8px; border:1px solid #ccd3da; border-radius:4px; font-size:13px;"
+                 onkeydown="if(event.key==='Enter')applySpecSearch()">
+          <button class="btn secondary" onclick="applySpecSearch()">조회</button>
         </div>
         <table>
-          <thead><tr><th>Service ID</th><th>버전</th><th>사용</th></tr></thead>
+          <thead><tr><th>Service ID</th><th>서비스명</th><th>사용</th></tr></thead>
           <tbody id="specList"></tbody>
         </table>
+        <div style="margin-top:12px;">
+          <button class="btn" onclick="newSpec()">신규</button>
+        </div>
       </div>
 
       <div class="card">
-        <strong id="specFormTitle">신규 서비스 등록</strong>
-        <div class="row2" style="margin-top:10px;">
-          <div class="field"><label>Service ID (예: IFRS17.CLOSING.STATUS)</label><input id="f_serviceId"></div>
-          <div class="field"><label>버전</label><input id="f_version" value="1.0"></div>
-        </div>
+        <strong id="specFormTitle">서비스 명세 등록 / 수정</strong>
+        <div class="field" style="margin-top:10px;"><label>Service ID</label><input id="f_serviceId" placeholder="예: IFRS17.CLOSING.STATUS"></div>
         <div class="field"><label>서비스명</label><input id="f_serviceName"></div>
-        <div class="row2">
-          <div class="field"><label>도메인 코드</label><input id="f_domainCode"></div>
-          <div class="field"><label>서비스 유형</label>
-            <select id="f_serviceType"><option value="READ">READ</option><option value="ACTION">ACTION</option></select>
-          </div>
-        </div>
+        <div class="field"><label>버전</label><input id="f_version" value="1.0"></div>
+        <div class="field"><label>Spring Bean</label><input id="f_implementationBean"></div>
         <div class="field"><label>서비스 설명</label><textarea id="f_serviceDescription" rows="2"></textarea></div>
-        <div class="row2">
-          <div class="field"><label>Spring Bean명</label><input id="f_implementationBean"></div>
-          <div class="field"><label>담당 부서</label><input id="f_ownerDepartment"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>Timeout(ms)</label><input id="f_timeoutMs" value="30000"></div>
-          <div class="field"><label>허용 역할(쉼표 구분)</label><input id="f_allowedRoles" placeholder="IFRS17_CLOSING_VIEW"></div>
+        <div class="field"><label>요청 JSON 명세</label><textarea id="f_requestSpec" rows="2" placeholder="{ closingYearMonth, closingType }"></textarea></div>
+        <div class="field"><label>응답 JSON 명세</label><textarea id="f_responseSpec" rows="3" placeholder="{ stage, status, startTime, endTime }"></textarea></div>
+        <div class="field"><label>허용 역할 (쉼표 구분)</label><input id="f_allowedRoles" placeholder="IFRS17_USER, IFRS17_MANAGER"></div>
+        <div class="field"><label>사용 여부</label>
+          <select id="f_active"><option value="true">사용</option><option value="false">미사용</option></select>
         </div>
 
-        <div class="field">
-          <label>요청 파라미터 명세</label>
-          <div id="paramRows"></div>
-          <button class="btn secondary" onclick="addParamRow()">+ 파라미터 추가</button>
-        </div>
-
-        <div class="actions">
+        <p style="color:#b0413e; font-size:12px; margin:12px 0 0;">
+          ※ Java 클래스는 WAS에 사전 배포되어 있어야 하며, 저장 시 Bean 존재 여부와 Service ID 일치 여부를 확인합니다.
+        </p>
+        <div class="actions" style="justify-content:flex-end;">
+          <button class="btn secondary" onclick="cancelSpecEdit()">취소</button>
           <button class="btn success" onclick="saveSpec()">저장</button>
-          <button class="btn" onclick="toggleActive(true)">사용으로 전환</button>
-          <button class="btn danger" onclick="toggleActive(false)">미사용으로 전환</button>
         </div>
         <div id="specMessage" class="status-line"></div>
       </div>
@@ -157,6 +150,8 @@
 <script>
 let specs = [];
 let selectedServiceId = null;
+let currentDetail = null;
+let specFilter = '';
 
 function headers(extra) {
   const h = {
@@ -190,26 +185,33 @@ async function loadSpecs() {
 function renderSpecList() {
   const tbody = document.getElementById('specList');
   tbody.innerHTML = '';
-  specs.forEach(s => {
-    const tr = document.createElement('tr');
-    tr.className = 'row' + (s.serviceId === selectedServiceId ? ' selected' : '');
-    tr.onclick = () => loadSpecDetail(s.serviceId);
-    tr.innerHTML = `<td>${s.serviceId}</td><td>${s.activeVersion || '-'}</td>` +
-      `<td><span class="badge ${s.active ? 'on' : 'off'}">${s.active ? '사용' : '미사용'}</span></td>`;
-    tbody.appendChild(tr);
-  });
+  const kw = specFilter.trim().toLowerCase();
+  specs
+    .filter(s => !kw || s.serviceId.toLowerCase().includes(kw) || (s.serviceName || '').toLowerCase().includes(kw))
+    .forEach(s => {
+      const tr = document.createElement('tr');
+      tr.className = 'row' + (s.serviceId === selectedServiceId ? ' selected' : '');
+      tr.onclick = () => loadSpecDetail(s.serviceId);
+      tr.innerHTML = `<td>${s.serviceId}</td><td>${s.serviceName || '-'}</td>` +
+        `<td>${s.active ? 'Y' : 'N'}</td>`;
+      tbody.appendChild(tr);
+    });
+}
+
+function applySpecSearch() {
+  specFilter = document.getElementById('specSearch').value;
+  renderSpecList();
 }
 
 function newSpec() {
   selectedServiceId = null;
-  document.getElementById('specFormTitle').textContent = '신규 서비스 등록';
-  ['f_serviceId','f_serviceName','f_domainCode','f_serviceDescription','f_implementationBean',
-   'f_ownerDepartment','f_allowedRoles'].forEach(id => document.getElementById(id).value = '');
+  currentDetail = null;
+  document.getElementById('specFormTitle').textContent = '서비스 명세 등록 / 수정';
+  ['f_serviceId','f_serviceName','f_serviceDescription','f_implementationBean',
+   'f_requestSpec','f_responseSpec','f_allowedRoles'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f_serviceId').disabled = false;
   document.getElementById('f_version').value = '1.0';
-  document.getElementById('f_timeoutMs').value = '30000';
-  document.getElementById('paramRows').innerHTML = '';
-  addParamRow();
+  document.getElementById('f_active').value = 'false';
   setSpecMessage('');
   renderSpecList();
 }
@@ -219,65 +221,41 @@ async function loadSpecDetail(serviceId) {
   const res = await fetch('/api/console/services/' + encodeURIComponent(serviceId), { headers: headers() });
   if (!res.ok) { setSpecMessage('상세 조회 실패: HTTP ' + res.status); return; }
   const d = await res.json();
+  currentDetail = d;
   document.getElementById('specFormTitle').textContent = serviceId + (d.beanRegistered ? '' : ' (⚠ Bean 미등록/불일치)');
   document.getElementById('f_serviceId').value = d.serviceId;
   document.getElementById('f_serviceId').disabled = true;
   document.getElementById('f_version').value = d.version;
   document.getElementById('f_serviceName').value = d.serviceName;
-  document.getElementById('f_domainCode').value = d.domainCode;
-  document.getElementById('f_serviceType').value = d.serviceType;
   document.getElementById('f_serviceDescription').value = d.serviceDescription || '';
   document.getElementById('f_implementationBean').value = d.implementationBean;
-  document.getElementById('f_ownerDepartment').value = d.ownerDepartment;
-  document.getElementById('f_timeoutMs').value = d.timeoutMs;
-  document.getElementById('f_allowedRoles').value = (d.allowedRoles || []).join(',');
-
-  const paramRows = document.getElementById('paramRows');
-  paramRows.innerHTML = '';
-  (d.requestParams || []).forEach(p => addParamRow(p));
-  if ((d.requestParams || []).length === 0) addParamRow();
-
+  document.getElementById('f_requestSpec').value = d.requestSpec || '';
+  document.getElementById('f_responseSpec').value = d.responseSpec || '';
+  document.getElementById('f_allowedRoles').value = (d.allowedRoles || []).join(', ');
+  document.getElementById('f_active').value = d.active ? 'true' : 'false';
   setSpecMessage('');
   renderSpecList();
 }
 
-function addParamRow(param) {
-  const wrap = document.getElementById('paramRows');
-  const row = document.createElement('div');
-  row.className = 'param-row';
-  row.innerHTML = `
-    <input class="p_name" placeholder="파라미터명" value="${param ? param.paramName : ''}">
-    <input class="p_type" placeholder="타입" value="${param ? param.paramType : 'STRING'}">
-    <label style="font-size:11px;"><input type="checkbox" class="p_required" ${param && param.required ? 'checked' : ''}> 필수</label>
-    <input class="p_desc" placeholder="설명" value="${param ? (param.paramDescription || '') : ''}">
-    <button class="btn danger" style="padding:4px 6px;" onclick="this.parentElement.remove()">×</button>`;
-  wrap.appendChild(row);
-}
-
-function collectParams() {
-  return Array.from(document.querySelectorAll('#paramRows .param-row')).map((row, idx) => ({
-    paramName: row.querySelector('.p_name').value,
-    paramType: row.querySelector('.p_type').value || 'STRING',
-    required: row.querySelector('.p_required').checked,
-    paramDescription: row.querySelector('.p_desc').value,
-    displayOrder: idx + 1
-  })).filter(p => p.paramName);
-}
-
+/* 설계서 8.3에 없는 도메인/유형/부서/Timeout은 화면에서 숨기되,
+   NOT NULL 제약을 위해 기존값(수정 시) 또는 기본값(신규 시)을 채워 전송한다. */
 function buildSpecRequest() {
+  const serviceId = document.getElementById('f_serviceId').value.trim();
+  const d = currentDetail;
   return {
-    serviceId: document.getElementById('f_serviceId').value.trim(),
+    serviceId: serviceId,
     serviceName: document.getElementById('f_serviceName').value.trim(),
-    domainCode: document.getElementById('f_domainCode').value.trim(),
-    serviceType: document.getElementById('f_serviceType').value,
+    domainCode: d ? d.domainCode : (serviceId.split('.')[1] || 'GENERAL'),
+    serviceType: d ? d.serviceType : 'READ',
     serviceDescription: document.getElementById('f_serviceDescription').value,
-    ownerDepartment: document.getElementById('f_ownerDepartment').value.trim(),
+    ownerDepartment: d ? d.ownerDepartment : '정보기술팀',
     version: document.getElementById('f_version').value.trim(),
     implementationBean: document.getElementById('f_implementationBean').value.trim(),
-    timeoutMs: parseInt(document.getElementById('f_timeoutMs').value, 10) || 30000,
-    requestParams: collectParams(),
+    timeoutMs: d ? d.timeoutMs : 30000,
+    requestSpec: document.getElementById('f_requestSpec').value,
+    responseSpec: document.getElementById('f_responseSpec').value,
     allowedRoles: document.getElementById('f_allowedRoles').value.split(',').map(s => s.trim()).filter(Boolean),
-    active: false
+    active: document.getElementById('f_active').value === 'true'
   };
 }
 
@@ -293,16 +271,8 @@ async function saveSpec() {
   await loadSpecDetail(data.serviceId);
 }
 
-async function toggleActive(active) {
-  if (!selectedServiceId) { setSpecMessage('먼저 서비스를 선택하거나 저장하세요.'); return; }
-  const res = await fetch('/api/console/services/' + encodeURIComponent(selectedServiceId) + '/active', {
-    method: 'PATCH', headers: headers(), body: JSON.stringify({ active })
-  });
-  const data = await res.json();
-  if (!res.ok) { setSpecMessage('전환 실패: ' + (data.error ? data.error.message : ('HTTP ' + res.status))); return; }
-  setSpecMessage(active ? '사용으로 전환되었습니다.' : '미사용으로 전환되었습니다.');
-  await loadSpecs();
-  await loadSpecDetail(selectedServiceId);
+function cancelSpecEdit() {
+  if (selectedServiceId) { loadSpecDetail(selectedServiceId); } else { newSpec(); }
 }
 
 function setSpecMessage(msg) {
