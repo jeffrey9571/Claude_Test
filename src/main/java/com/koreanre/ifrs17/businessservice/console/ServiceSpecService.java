@@ -3,13 +3,11 @@ package com.koreanre.ifrs17.businessservice.console;
 import com.koreanre.ifrs17.businessservice.core.exception.ValidationException;
 import com.koreanre.ifrs17.businessservice.core.executor.BusinessServiceHandler;
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsChangeHistoryRepository;
-import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceParamRepository;
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceRepository;
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceRoleRepository;
 import com.koreanre.ifrs17.businessservice.persistence.mapper.BsServiceVersionRepository;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsChangeHistory;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsService;
-import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceParam;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceRole;
 import com.koreanre.ifrs17.businessservice.persistence.model.BsServiceVersion;
 import org.springframework.beans.BeansException;
@@ -38,17 +36,15 @@ public class ServiceSpecService {
 
     private final BsServiceRepository serviceRepository;
     private final BsServiceVersionRepository versionRepository;
-    private final BsServiceParamRepository paramRepository;
     private final BsServiceRoleRepository roleRepository;
     private final BsChangeHistoryRepository changeHistoryRepository;
     private final ApplicationContext applicationContext;
 
     public ServiceSpecService(BsServiceRepository serviceRepository, BsServiceVersionRepository versionRepository,
-            BsServiceParamRepository paramRepository, BsServiceRoleRepository roleRepository,
+            BsServiceRoleRepository roleRepository,
             BsChangeHistoryRepository changeHistoryRepository, ApplicationContext applicationContext) {
         this.serviceRepository = serviceRepository;
         this.versionRepository = versionRepository;
-        this.paramRepository = paramRepository;
         this.roleRepository = roleRepository;
         this.changeHistoryRepository = changeHistoryRepository;
         this.applicationContext = applicationContext;
@@ -93,7 +89,6 @@ public class ServiceSpecService {
         serviceRepository.save(service);
 
         saveVersion(request, now);
-        savePararms(request);
         saveRoles(request);
         recordChange(request.getServiceId(), "CREATE", operatorId, "서비스 신규 등록");
 
@@ -115,7 +110,6 @@ public class ServiceSpecService {
         service.setUpdatedBy(operatorId);
         serviceRepository.save(service);
 
-        paramRepository.deleteAll(paramRepository.findByServiceIdAndVersionOrderByDisplayOrder(serviceId, request.getVersion()));
         roleRepository.deleteAll(roleRepository.findByServiceId(serviceId));
 
         Optional<BsServiceVersion> existingVersion = versionRepository.findByServiceIdAndVersion(serviceId, request.getVersion());
@@ -123,13 +117,14 @@ public class ServiceSpecService {
             BsServiceVersion version = existingVersion.get();
             version.setImplementationBean(request.getImplementationBean());
             version.setTimeoutMs(request.getTimeoutMs() == null ? version.getTimeoutMs() : request.getTimeoutMs());
+            version.setRequestSchema(request.getRequestSpec());
+            version.setResponseSchema(request.getResponseSpec());
             version.setStatusCode(request.isActive() ? "ACTIVE" : "INACTIVE");
             versionRepository.save(version);
         } else {
             saveVersion(request, LocalDateTime.now());
         }
 
-        savePararms(request);
         saveRoles(request);
         recordChange(serviceId, "UPDATE", operatorId, "서비스 명세 수정");
 
@@ -207,28 +202,12 @@ public class ServiceSpecService {
                 .version(request.getVersion())
                 .implementationBean(request.getImplementationBean())
                 .timeoutMs(request.getTimeoutMs() == null ? 30000 : request.getTimeoutMs())
+                .requestSchema(request.getRequestSpec())
+                .responseSchema(request.getResponseSpec())
                 .statusCode(request.isActive() ? "ACTIVE" : "INACTIVE")
                 .effectiveFrom(now)
                 .build();
         versionRepository.save(version);
-    }
-
-    private void savePararms(ServiceSpecRequest request) {
-        if (request.getRequestParams() == null) {
-            return;
-        }
-        List<BsServiceParam> params = request.getRequestParams().stream()
-                .map(p -> BsServiceParam.builder()
-                        .serviceId(request.getServiceId())
-                        .version(request.getVersion())
-                        .paramName(p.getParamName())
-                        .paramType(StringUtils.hasText(p.getParamType()) ? p.getParamType() : "STRING")
-                        .requiredYn(p.isRequired() ? "Y" : "N")
-                        .paramDescription(p.getParamDescription())
-                        .displayOrder(p.getDisplayOrder())
-                        .build())
-                .collect(Collectors.toList());
-        paramRepository.saveAll(params);
     }
 
     private void saveRoles(ServiceSpecRequest request) {
@@ -290,19 +269,6 @@ public class ServiceSpecService {
             beanRegistered = false;
         }
 
-        List<ServiceSpecRequest.ParamSpec> params = paramRepository
-                .findByServiceIdAndVersionOrderByDisplayOrder(service.getServiceId(), version.getVersion()).stream()
-                .map(p -> {
-                    ServiceSpecRequest.ParamSpec spec = new ServiceSpecRequest.ParamSpec();
-                    spec.setParamName(p.getParamName());
-                    spec.setParamType(p.getParamType());
-                    spec.setRequired(p.isRequired());
-                    spec.setParamDescription(p.getParamDescription());
-                    spec.setDisplayOrder(p.getDisplayOrder());
-                    return spec;
-                })
-                .collect(Collectors.toList());
-
         List<String> roles = roleRepository.findByServiceId(service.getServiceId()).stream()
                 .map(BsServiceRole::getRoleCode)
                 .collect(Collectors.toList());
@@ -318,7 +284,8 @@ public class ServiceSpecService {
                 .implementationBean(version.getImplementationBean())
                 .timeoutMs(version.getTimeoutMs())
                 .versionStatus(version.getStatusCode())
-                .requestParams(params)
+                .requestSpec(version.getRequestSchema())
+                .responseSpec(version.getResponseSchema())
                 .allowedRoles(roles)
                 .active(service.isActive())
                 .beanRegistered(beanRegistered)

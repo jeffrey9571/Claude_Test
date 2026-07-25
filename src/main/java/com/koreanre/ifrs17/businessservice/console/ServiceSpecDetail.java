@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.util.Collections;
 import java.util.List;
 
-/** CON-01 상세영역 응답(8.3 필드 표 전체). */
+/** CON-01 상세영역 응답(8.3 필드 표 / 그림 8-1). */
 @Getter
 @Builder
 @AllArgsConstructor
@@ -22,8 +22,10 @@ public class ServiceSpecDetail {
     private final String implementationBean;
     private final Integer timeoutMs;
     private final String versionStatus;
-    @Builder.Default
-    private final List<ServiceSpecRequest.ParamSpec> requestParams = Collections.emptyList();
+    /** 요청 JSON 명세(자유 텍스트). */
+    private final String requestSpec;
+    /** 응답 JSON 명세(자유 텍스트). */
+    private final String responseSpec;
     @Builder.Default
     private final List<String> allowedRoles = Collections.emptyList();
     private final boolean active;
