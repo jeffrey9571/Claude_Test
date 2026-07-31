@@ -64,13 +64,18 @@ CREATE TABLE business_service.bs_service_param (
 );
 
 -- =============================================================================
--- 4) BS_SERVICE_ROLE : 서비스 역할 권한                               [신규]
---   근거: 7.2 (Key: service_id, role_code),
---         6.2 권한 원칙(BS_SERVICE_ROLE 사용), 8.3 허용 역할
+-- 4) BS_SERVICE_ROLE : 서비스 필요 권한                               [신규]
+--   근거: 7.2 (Key: service_id, role_code), 6.2 권한 원칙 + 권한설계 상세화
+--   role_code 형식: '화면ID:액션' (콜론 구분)
+--     - 화면ID : [A-Z]{4}M[0-9]{3}  (영문대문자4 + M + 숫자3, 예: CLSGM001)
+--     - 액션   : inqy(조회) / sv(저장) / cnfr(확정) / aprl(승인) / prt(출력)
+--     - 예: 'CLSGM001:inqy' (조회 권한), 'CLSGM001:sv' (저장 권한)
+--   판정: 외부 권한API가 반환한 사용자 화면권한(Y/N)과 필요 권한을 AND 비교
+--   (READ 서비스 → :inqy, ACTION 서비스 → :inqy + :sv 등 서비스별 행으로 정의)
 -- =============================================================================
 CREATE TABLE business_service.bs_service_role (
     service_id  varchar(100) NOT NULL REFERENCES business_service.bs_service(service_id),
-    role_code   varchar(100) NOT NULL,
+    role_code   varchar(100) NOT NULL,  -- '화면ID:액션' (예: CLSGM001:inqy)
     created_at  timestamp    NOT NULL DEFAULT current_timestamp,
     created_by  varchar(30)  NOT NULL,
     PRIMARY KEY (service_id, role_code)
