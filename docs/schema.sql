@@ -85,9 +85,12 @@ CREATE TABLE business_service.bs_service_role (
 -- 5) BS_CLIENT : 호출 Client 등록                                     [신규]
 --   근거: 7.2 (Key: client_id),
 --         5.2 X-Client-ID(호출 채널 식별), 6.x remote_ip 통제
+--   client_id 명명 규칙: '{채널}-{시스템}-{일련번호}'
+--     - 정규식 [A-Z0-9]+-[A-Z0-9]+-[0-9]{2}  (예: MCP-IFRS17-01)
+--     - 채널 세그먼트는 하이픈 없는 코드 사용(예: AI-AGENT 채널 → AGENT)
 -- =============================================================================
 CREATE TABLE business_service.bs_client (
-    client_id       varchar(80)  PRIMARY KEY,
+    client_id       varchar(80)  PRIMARY KEY,  -- '{채널}-{시스템}-{일련번호}' (예: MCP-IFRS17-01)
     client_name     varchar(200) NOT NULL,
     channel_type    varchar(30)  NOT NULL,                     -- MCP / AI-AGENT / BATCH 등
     allowed_ip_cidr varchar(50),
