@@ -124,7 +124,7 @@ CREATE TABLE business_service.bs_client_service (
 CREATE TABLE business_service.bs_call_log (
     request_id        varchar(80) PRIMARY KEY,   -- 서버 생성 유일값(호출자 헤더를 PK로 쓰지 않음)
     client_request_id varchar(80),               -- [신규] 호출자 X-Request-ID 원본(추적·상관용, 유일성 미보장·중복 가능)
-    trace_id          varchar(80),
+    trace_id          varchar(80),               -- 분산추적/장애분석용 선택 pass-through(§5.2, 응답 에코). 운영 주 추적키는 request_id, receiver 그룹핑 로직 없음
     service_id        varchar(100) NOT NULL,
     service_version   varchar(20) NOT NULL,
     client_id         varchar(80) NOT NULL,
