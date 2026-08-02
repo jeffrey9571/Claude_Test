@@ -113,10 +113,17 @@ CREATE TABLE business_service.bs_client_service (
 );
 
 -- =============================================================================
--- 7) BS_CALL_LOG : 호출 감사로그                                      [원본 7.3]
+-- 7) BS_CALL_LOG : 호출 감사로그                                      [원본 7.3 + 감사 무결성 보강]
+--   [감사 무결성] request_id(PK)는 서버가 유일하게 생성한다(호출자 X-Request-ID를 PK로 쓰지 않음).
+--     - 사유: 호출자가 헤더로 임의/중복 request_id를 보내면 기존 감사로그가 덮어써질(merge) 위험.
+--     - 생성 형식: 시각+시퀀스/UUID 조합으로 유일성 보장(예: REQ-yyyyMMddHHmmssSSS-{seq}).
+--       (기존 REQ-yyyyMMdd-{4자리} 순환 방식은 대량 호출 시 충돌 위험이 있어 대체)
+--     - 호출자 X-Request-ID 원본은 client_request_id 컬럼에 상관관계용으로만 저장(유일성 미보장).
+--   ※ 위 request_id 서버생성/컬럼 추가는 문서 확정 사항이며 코드 반영은 예정.
 -- =============================================================================
 CREATE TABLE business_service.bs_call_log (
-    request_id        varchar(80) PRIMARY KEY,
+    request_id        varchar(80) PRIMARY KEY,   -- 서버 생성 유일값(호출자 헤더를 PK로 쓰지 않음)
+    client_request_id varchar(80),               -- [신규] 호출자 X-Request-ID 원본(추적·상관용, 유일성 미보장·중복 가능)
     trace_id          varchar(80),
     service_id        varchar(100) NOT NULL,
     service_version   varchar(20) NOT NULL,
