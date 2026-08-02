@@ -18,10 +18,10 @@ CREATE TABLE business_service.bs_service (
     service_id          varchar(100) PRIMARY KEY,
     service_name        varchar(200) NOT NULL,
     service_description varchar(300) NOT NULL,                    -- 서비스 설명(업무 목적). CON-01 §8.3 필수 항목
-    domain_code         varchar(30)  NOT NULL,
+    domain_code         varchar(30),                             -- 업무 도메인 분류(표시용, 로직 미사용) → nullable
     service_type      varchar(10)  NOT NULL CHECK (service_type IN ('READ','ACTION')),
     source_system     varchar(30)  NOT NULL DEFAULT 'IFRS17',
-    owner_department  varchar(50)  NOT NULL,
+    owner_department  varchar(50),                               -- 책임 부서(표시용, 로직 미사용) → nullable
     active_yn         char(1)      NOT NULL DEFAULT 'Y',
     created_at        timestamp    NOT NULL DEFAULT current_timestamp,
     created_by        varchar(30)  NOT NULL,
