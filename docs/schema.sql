@@ -280,3 +280,26 @@ CREATE TABLE business_service.bs_service_cache_event (
     processed_at    timestamp,
     server_instance varchar(100)                                -- 이벤트를 소비한 WAS 인스턴스
 );
+
+-- =============================================================================
+-- 권한(Role) 설정
+--   기존 WAS 구동 계정 : fr_app
+--   신규 스키마 접근 Role : business_service_user_role
+--   부여 권한 : 조회(SELECT)/입력(INSERT)/수정(UPDATE)/삭제(DELETE)
+-- =============================================================================
+-- 1) Role 생성 (로그인 불가 그룹 Role)
+CREATE ROLE business_service_user_role NOLOGIN;
+
+-- 2) 스키마 사용 권한
+GRANT USAGE ON SCHEMA business_service TO business_service_user_role;
+
+-- 3) 기존 테이블 DML 권한 (조회/입력/수정/삭제)
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA business_service
+    TO business_service_user_role;
+
+-- 4) 향후 생성되는 테이블에도 자동 적용 (Default Privileges)
+ALTER DEFAULT PRIVILEGES IN SCHEMA business_service
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO business_service_user_role;
+
+-- 5) 기존 WAS 계정(fr_app)에 Role 부여
+GRANT business_service_user_role TO fr_app;
