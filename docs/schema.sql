@@ -42,6 +42,10 @@ CREATE TABLE business_service.bs_service_version (
     status_code         varchar(20) NOT NULL DEFAULT 'ACTIVE',
     effective_from      timestamp NOT NULL DEFAULT current_timestamp,
     effective_to        timestamp,
+    created_at          timestamp NOT NULL DEFAULT current_timestamp,   -- 등록 일시(감사)
+    created_by          varchar(30) NOT NULL,                           -- 등록자(감사)
+    updated_at          timestamp NOT NULL DEFAULT current_timestamp,   -- 수정 일시(감사)
+    updated_by          varchar(30) NOT NULL,                           -- 수정자(감사)
     PRIMARY KEY (service_id, version)
 );
 
@@ -78,6 +82,8 @@ CREATE TABLE business_service.bs_service_role (
     role_code   varchar(100) NOT NULL,  -- '화면ID:액션' (예: CLSGM001:inqy)
     created_at  timestamp    NOT NULL DEFAULT current_timestamp,
     created_by  varchar(30)  NOT NULL,
+    updated_at  timestamp    NOT NULL DEFAULT current_timestamp,   -- 수정 일시(감사)
+    updated_by  varchar(30)  NOT NULL,                             -- 수정자(감사)
     PRIMARY KEY (service_id, role_code)
 );
 
@@ -96,7 +102,9 @@ CREATE TABLE business_service.bs_client (
     allowed_ip_cidr varchar(50),
     active_yn       char(1)      NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
     created_at      timestamp    NOT NULL DEFAULT current_timestamp,
-    created_by      varchar(30)  NOT NULL
+    created_by      varchar(30)  NOT NULL,
+    updated_at      timestamp    NOT NULL DEFAULT current_timestamp,   -- 수정 일시(감사)
+    updated_by      varchar(30)  NOT NULL                              -- 수정자(감사)
 );
 
 -- =============================================================================
@@ -109,6 +117,8 @@ CREATE TABLE business_service.bs_client_service (
     active_yn  char(1)      NOT NULL DEFAULT 'Y' CHECK (active_yn IN ('Y','N')),
     created_at timestamp    NOT NULL DEFAULT current_timestamp,
     created_by varchar(30)  NOT NULL,
+    updated_at timestamp    NOT NULL DEFAULT current_timestamp,   -- 수정 일시(감사)
+    updated_by varchar(30)  NOT NULL,                             -- 수정자(감사)
     PRIMARY KEY (client_id, service_id)
 );
 
